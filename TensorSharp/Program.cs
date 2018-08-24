@@ -11,7 +11,10 @@ namespace TensorSharp
     {
         static void Main(string[] args)
         {
-
+            var env = new GridEnvironment();
+            var agent = new Agent(env);
+            var game = new FrozenLake(agent);
+            game.GameLoop();
         }
     }
 }

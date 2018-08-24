@@ -8,7 +8,7 @@ namespace TensorSharp
 {
     class Agent
     {
-        static readonly float dicountFactor = 0.99f;
+        static readonly float discountFactor = 0.99f;
 
         private GridEnvironment environment;
         private float[,] valueTable;
@@ -27,9 +27,24 @@ namespace TensorSharp
             
             for(int i = 0; i < envSize * envSize; i++)
                 for(int k=0;k<4;k++)
-                    policyTable[i/4, i%4, k] = 0.25f;
+                    policyTable[i/5, i%5, k] = 0.25f;
         }
 
+        public void Reset()
+        {
+            var envSize = GridEnvironment.gridSize;
+
+            Array.Clear(valueTable, 0, valueTable.Length);
+
+            for (int i = 0; i < envSize * envSize; i++)
+                for (int k = 0; k < 4; k++)
+                    policyTable[i / 5, i % 5, k] = 0.25f;
+        }
+
+        /*
+         Bellman expectation equation
+
+        */
         public void PolicyEvaluation()
         {
             var envSize = GridEnvironment.gridSize;
@@ -37,46 +52,111 @@ namespace TensorSharp
             float[,] nextValue = new float[envSize, envSize];
             Array.Clear(nextValue, 0, nextValue.Length);
 
-            var allState = environment.GetAllState();
+            var allState = environment.allState;
 
             foreach (var state in allState)
             {
-                var value = 0.0;
+                var value = 0.0f;
+                var x = state.Key;
+                var y = state.Value;
 
-                /*
-                if(state==[2, 2])
+                if (x == 2 && y == 2)
                 {
-                    nextValue[state[0], state[1]] = 0.0f;
+                    nextValue[x, y] = 0.0f;
                     continue;
                 }
-                */
-                
+
+                var actions = environment.PossibleAtions;
+
+                foreach (var action in actions)
+                {
+                    var nextState = environment.StateAfterAction(state, action);
+                    var reward = environment.GetReward(state, action);
+                    var tempValue = GetValue(nextState);
+                    value += GetPolicy(state, action) * (reward + discountFactor * tempValue);
+                }
+
+                nextValue[state.Key, state.Value] = (float) Math.Round(value, 2);
             }
 
+            valueTable = nextValue;
         }
 
         public void PolicyImprovement()
         {
+            float[,,] nextPolicy = policyTable;
 
+            foreach(var state in environment.allState)
+            {
+                var x = state.Key;
+                var y = state.Value;
+
+                if (x == 2 && y == 2)
+                    continue;
+
+                var value = -99999.0f;
+                var maxIndex = new List<int>();
+                var result = new float[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+                foreach(var action in environment.PossibleAtions)
+                {
+                    var nextState = environment.StateAfterAction(state, action);
+                    var reward = environment.GetReward(state, action);
+                    var nextValue = GetValue(state);
+                    var temp = reward + discountFactor * nextValue;
+
+                    if (temp == value)
+                        maxIndex.Add(action);
+                    else if(temp > value)
+                    {
+                        value = temp;
+                        maxIndex.Clear();
+                        maxIndex.Add(action);
+                    }
+                }
+
+                var probability = 1 / maxIndex.Count;
+
+                foreach (var idx in maxIndex)
+                    nextPolicy[x, y, idx] = probability;
+                
+            }
         }
 
-        public int GetAction()
+        public int GetAction(KeyValuePair<int, int> state)
         {
-            int idx = 0;
+            var x = state.Key;
+            var y = state.Value;
 
-            return idx;
+            var rand = new Random();
+            var randomPick = rand.Next(100) / 100;
+            var policySum = 0.0f;
+
+            for (int i = 0; i < 4; i++)
+            {
+                policySum += policyTable[x, y, i];
+
+                if (randomPick < policySum)
+                    return i;
+            }
+
+            return 0;
         }
 
-        public float GetPolicy()
+        public float GetPolicy(KeyValuePair<int, int> state, int action)
         {
-            float state = 0.1f ;
+            var x = state.Key;
+            var y = state.Value;
 
-            return state;
+            if (x == 2 && y == 2)
+                return 0.0f;
+
+            return policyTable[x, y, action] ;
         }
 
-        public float GetValue()
+        public float GetValue(KeyValuePair<int, int> state)
         {
-            return valueTable[0, 0];
+            return (float) Math.Round(valueTable[state.Key, state.Value], 2);
         }
     }
 }
