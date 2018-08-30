@@ -26,8 +26,8 @@ namespace TensorSharp
             Array.Clear(grid, PLAIN, grid.Length);
 
             //Set trap, gold position;
-            grid[1, 2] = grid[2, 1] = -1;
-            grid[2, 2] = 1;
+            grid[1, 2] = grid[2, 1] = TRAP;
+            grid[2, 2] = GOLD;
 
             //Move direction define *UP, DOWN, LEFT, RIGHT
             move = new int[4, 2]{ { -1, 0}, {1, 0}, { 0, -1}, { 0, 1} };
@@ -62,10 +62,10 @@ namespace TensorSharp
             var x = state.Key;
             var y = state.Value;
 
-            if (x + moveX > 0 && x + moveX < 5)
+            if (x + moveX > -1 && x + moveX < 5)
                 x += moveX;
 
-            if (y + moveY > 0 && y + moveY < 5)
+            if (y + moveY > -1 && y + moveY< 5)
                 y += moveY;
 
             return new KeyValuePair<int, int>(x, y);

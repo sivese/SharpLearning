@@ -8,7 +8,7 @@ namespace TensorSharp
 {
     class Agent
     {
-        static readonly float discountFactor = 0.99f;
+        static readonly float discountFactor = 0.9f;
 
         private GridEnvironment environment;
         private float[,] valueTable;
@@ -24,10 +24,13 @@ namespace TensorSharp
             Array.Clear(valueTable, 0, valueTable.Length);
 
             policyTable = new float[envSize, envSize, 4];
-            
-            for(int i = 0; i < envSize * envSize; i++)
-                for(int k=0;k<4;k++)
-                    policyTable[i/5, i%5, k] = 0.25f;
+
+            for (int i = 0; i < envSize * envSize; i++)
+                for (int k = 0; k < 4; k++)
+                {
+                    if (i / 5 != 2 || i % 5 != 2)
+                        policyTable[i / 5, i % 5, k] = 0.25f;
+                }
         }
 
         public void Reset()
@@ -49,7 +52,7 @@ namespace TensorSharp
         {
             var envSize = GridEnvironment.gridSize;
 
-            float[,] nextValue = new float[envSize, envSize];
+            var nextValue = new float[envSize, envSize];
             Array.Clear(nextValue, 0, nextValue.Length);
 
             var allState = environment.allState;
@@ -73,7 +76,8 @@ namespace TensorSharp
                     var nextState = environment.StateAfterAction(state, action);
                     var reward = environment.GetReward(state, action);
                     var tempValue = GetValue(nextState);
-                    value += GetPolicy(state, action) * (reward + discountFactor * tempValue);
+
+                    value += GetPolicy(state, action) * ((float)reward + discountFactor * tempValue);
                 }
 
                 nextValue[state.Key, state.Value] = (float) Math.Round(value, 2);
@@ -102,7 +106,7 @@ namespace TensorSharp
                 {
                     var nextState = environment.StateAfterAction(state, action);
                     var reward = environment.GetReward(state, action);
-                    var nextValue = GetValue(state);
+                    var nextValue = GetValue(nextState);
                     var temp = reward + discountFactor * nextValue;
 
                     if (temp == value)
@@ -115,7 +119,10 @@ namespace TensorSharp
                     }
                 }
 
-                var probability = 1 / maxIndex.Count;
+                var probability = (1.0f / (float) maxIndex.Count);
+
+                for (int i = 0; i < 4; i++)
+                    nextPolicy[x, y, i] = 0.0f;
 
                 foreach (var idx in maxIndex)
                     nextPolicy[x, y, idx] = probability;
@@ -129,7 +136,7 @@ namespace TensorSharp
             var y = state.Value;
 
             var rand = new Random();
-            var randomPick = rand.Next(100) / 100;
+            var randomPick = ((float)rand.Next(100) / (float)100);
             var policySum = 0.0f;
 
             for (int i = 0; i < 4; i++)
@@ -144,7 +151,7 @@ namespace TensorSharp
         }
 
         public float GetPolicy(KeyValuePair<int, int> state, int action)
-        {
+        { 
             var x = state.Key;
             var y = state.Value;
 
