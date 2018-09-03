@@ -1,6 +1,6 @@
  Simple reinforcement Learning project without deep learning framework. This is consist of pure C# without any GUI.
 
-![Screenshot](https://github.com/sivese/SharpLearning/tree/master/img/frozen_lake.PNG)
+![Screenshot](https://raw.githubusercontent.com/sivese/SharpLearning/master/img/frozen_lake.PNG)
 
 ## Menu
 1. Evaluate: Evaluating value table by base on reward
